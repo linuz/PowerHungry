@@ -37,7 +37,7 @@
         and memory usage. The -ImportCSV parameter will overwrite any 
         previous -ImportCSV data and will clean up after itself
 
-     .PARAMETER SID
+      .PARAMETER SID
 
       Mandatory.
 
@@ -45,20 +45,20 @@
 
       Accepted as a parameter or through a Pipeline
 
-     .EXAMPLE
+      .EXAMPLE
       
         PS C:\> Find-LocalAdmin -ImportCSV c:\files\admins.csv -SID S-1-5-21-1004336348-1177238915-682003330-512
 
         Initally load admin.csv file into memory and search it for the specified SID
         Note: You do not need to use -ImportCSV every time.
       
-     .EXAMPLE
+      .EXAMPLE
       
         PS C:\> Find-LocalAdmin -SID S-1-5-21-1004336348-1177238915-682003330-512
 
         Search for SID in the CSV file that is loaded in memory.
 
-     .EXAMPLE
+      .EXAMPLE
       
         PS C:\> Get-ADUser -Identity "JohnDoe" | Find-LocalAdmin
         
@@ -68,8 +68,9 @@
       .TODO
 
         - Allow for Identity instead of just SID
-        - Fix error of searching before importing CSV
-        - Make SID non-mandatory, warn when not specified
+        - Output to objects
+        - Progress indicator for -ImportCSV
+        - Add checking for proper CSV format
 
   #>
   
@@ -78,7 +79,7 @@
         [String]
         $ImportCSV,
 
-        [Parameter(Mandatory=$True, ValueFromPipelineByPropertyName=$True)]
+        [Parameter(ValueFromPipelineByPropertyName=$True)]
         [String[]]
         $SID
     )
@@ -96,13 +97,34 @@
         $LocalAdminCSV = Import-CSV $ImportCSV
         Write-Verbose "Writing to `$Global:LocalAdminHashTable varaible (This may take a minute or two...)"
         $Global:LocalAdminHashTable = $LocalAdminCSV | Group-Object -AsHashTable -AsString -Property SID
-        Write-Verbose 'CSV file has been imported into a hash table'
+        Write-Verbose 'CSV file has been imported into a hash table. You do not need to do this again'
 
         # Cleanup and garbage collection
         Write-Verbose 'Cleaning up variables and collecting garbage'
         Remove-Variable LocalAdminCSV
         [System.GC]::collect()
     }
-    Write-Verbose "Searching SID: $SID"
-    $Global:LocalAdminHashTable[$SID].Server
+    
+    if ($SID) {
+      Write-Verbose "Searching SID: $SID"
+      try {
+        $SIDResults = $Global:LocalAdminHashTable[$SID].Server
+        if ($SIDResults) {
+          $SIDResults
+        }
+        
+        else {
+          Write-Verbose "SID: $SID not found"
+        }
+      }
+      
+      catch {
+        Write-Error 'No CSV file currently imported. Use "-ImportCSV <CSV File>"'
+        Write-Warning 'You will only need to run -ImportCSV once per PowerShell session'
+      }
+    }
+    
+    else {
+      Write-Warning 'No SID supplied. Doing nothing else.'
+    }
 }
