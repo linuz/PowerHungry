@@ -92,6 +92,7 @@
       - Remove Duplicates from groups list
       - More Verbose output
       - Remove use of AD cmdlets
+      - Consider outputing self identity
 
   #>
   
