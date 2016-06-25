@@ -14,9 +14,16 @@ Example Usage:
 ----------------
 (Read individual scripts for individual usage)
 
-Get computers a particular user has admin access to
+Get computer names that a particular user has admin access to
 
     PS C:\> Search-LocalAdmins -ImportCSV c:\test\localadmins.csv
     PS C:\> Get-AdUser -Identity "JohnDoe" | Get-EffectiveGroups -Quick | ForEach-Object {$_ | Search-LocalAdmins}
     
-Note: *Search-LocalAdmins -ImportCSV* only needs to be done once per PowerShell session
+Example Usage Explanation:
+----------------
+* **Search-LocalAdmins -ImportCSV c:\test\localadmins.csv** = Imports the Invoke-EnumerateLocalAdmin CSV into memory for processing  
+* **Get-AdUser -Identity "JohnDoe"** = Get JohnDoe's user object from the Active Directory  
+* **| Get-EffectiveGroups -Quick** = Get JohnDoe's effective groups (nested groups)  
+* **| ForEach-Object {$_ | Search-LocalAdmins}** = Searches all of JohnDoe's effective groups for admin access based on CSV file imported earlier  
+    
+Note: **Search-LocalAdmins -ImportCSV** only needs to be done once per PowerShell session
