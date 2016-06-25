@@ -9,6 +9,7 @@
         License: BSD 3-Clause
         Required Dependencies: PowerView's Invoke-EnumerateLocalAdmin CSV Output
         Optional Dependencies: None
+        Minimum PowerShell Version = 3.0
 
       .DESCRIPTION
 
@@ -36,7 +37,6 @@
         and memory usage. The -ImportCSV parameter will overwrite any 
         previous -ImportCSV data and will clean up after itself
 
-     
      .PARAMETER SID
 
       Mandatory.
@@ -64,7 +64,6 @@
         
         Will pass JohnDoe's SID through the pipeline to Find-LocalAdmin and search for it
         in the CSV file loaded in memory
-      
       
       .TODO
 
