@@ -72,6 +72,7 @@
         - Progress indicator for -ImportCSV
         - Add checking for proper CSV format
         - Search for Identity SID in the HashTable as well
+        - Consider changing some Write-Verbose output to Write-Host
 
   #>
   
@@ -87,23 +88,43 @@
 
     # Lots of memory management in here, thus lots of verbosity with the -Verbose flag
     if ($ImportCSV) {
-        Write-Verbose 'Parameter -ImportCSV Present'
-        # Check if $Global:LocalAdminHashTable already exists
-        Write-Verbose "Checking if `$Global:LocalAdminHashTable already exist"
-        if ($Global:LocalAdminHashTable) {
-            Write-Verbose "Variable `$Global:LocalAdminHashTable exist, prompting to remove"
-            Remove-Variable -Scope Global -Confirm LocalAdminHashTable
+        # Checking if CSV file is the right format
+        Write-Verbose 'Checking if CSV file contains the proper headers'     
+        $CSVHeaders = Get-Content $ImportCSV | Select-Object -First 1
+        if ($CSVHeaders.contains('"Server"') -and $CSVHeaders.contains('"AccountName"') -and $CSVHeaders.contains('"SID"')) {
+          Write-Verbose 'CSV File is valid'
+          # Check if $Global:LocalAdminHashTable already exists
+          Write-Verbose "Checking if `$Global:LocalAdminHashTable already exist"
+          if ($Global:LocalAdminHashTable) {
+              Write-Verbose "Variable `$Global:LocalAdminHashTable exist, prompting to remove"
+              if ((read-host 'Do you want to remove any previous CSV import data? (Y/N)') -eq 'y') {
+                Write-Verbose 'Removing previous CSV import data'
+                Remove-Variable -Scope Global LocalAdminHashTable
+                Write-Output "Importing CSV File: $ImportCSV..."
+                $LocalAdminCSV = Import-CSV $ImportCSV
+                Write-Verbose "Writing to `$Global:LocalAdminHashTable varaible (This may take a minute or two...)"
+                $Global:LocalAdminHashTable = $LocalAdminCSV | Group-Object -AsHashTable -AsString -Property SID
+                Write-Verbose 'CSV file has been imported into a hash table. You do not need to do this again'
+                Remove-Variable LocalAdminCSV
+              }
+              
+              else {
+                Write-Verbose 'Keeping exisiting CSV import data'
+              }
+              
+          }
+          
         }
-        Write-Verbose "Importing CSV File: $ImportCSV"
-        $LocalAdminCSV = Import-CSV $ImportCSV
-        Write-Verbose "Writing to `$Global:LocalAdminHashTable varaible (This may take a minute or two...)"
-        $Global:LocalAdminHashTable = $LocalAdminCSV | Group-Object -AsHashTable -AsString -Property SID
-        Write-Verbose 'CSV file has been imported into a hash table. You do not need to do this again'
-
+        
+        else {
+          Write-Error "CSV file is not valid. Expecting CSV file from 'PowerView's Invoke-EnumerateLocalAdmin -OutFile' parameter"
+          Exit  
+        }
+        
         # Cleanup and garbage collection
         Write-Verbose 'Cleaning up variables and collecting garbage'
-        Remove-Variable LocalAdminCSV
-        [System.GC]::collect()
+        Remove-Variable CSVHeaders
+        [System.GC]::collect()     
     }
     
     if ($SID) {
