@@ -1,4 +1,4 @@
-﻿Function Search-LocalAdmins {
+Function Search-LocalAdmins {
   <#
 
       .SYNOPSIS
@@ -70,9 +70,8 @@
         - Allow for Identity instead of just SID
         - Output to objects
         - Progress indicator for -ImportCSV
-        - Add checking for proper CSV format
-        - Search for Identity SID in the HashTable as well
         - Consider changing some Write-Verbose output to Write-Host
+        - Add ability to search by specifying an identity
 
   #>
   
@@ -82,9 +81,19 @@
         $ImportCSV,
 
         [Parameter(ValueFromPipelineByPropertyName=$True)]
+        [alias('objectSid')]
         [String[]]
         $SID
     )
+    
+    Function Invoke-ImportCSV {
+      Write-Output "Importing CSV File: $ImportCSV..."
+      $LocalAdminCSV = Import-CSV $ImportCSV
+      Write-Verbose 'Writing to $Global:LocalAdminHashTable varaible (This may take a minute or two...)'
+      $Global:LocalAdminHashTable = $LocalAdminCSV | Group-Object -AsHashTable -AsString -Property SID
+      Write-Verbose 'CSV file has been imported into a hash table. You do not need to do this again'
+      Remove-Variable LocalAdminCSV
+    }
 
     # Lots of memory management in here, thus lots of verbosity with the -Verbose flag
     if ($ImportCSV) {
@@ -100,18 +109,18 @@
               if ((read-host 'Do you want to remove any previous CSV import data? (Y/N)') -eq 'y') {
                 Write-Verbose 'Removing previous CSV import data'
                 Remove-Variable -Scope Global LocalAdminHashTable
-                Write-Output "Importing CSV File: $ImportCSV..."
-                $LocalAdminCSV = Import-CSV $ImportCSV
-                Write-Verbose "Writing to `$Global:LocalAdminHashTable varaible (This may take a minute or two...)"
-                $Global:LocalAdminHashTable = $LocalAdminCSV | Group-Object -AsHashTable -AsString -Property SID
-                Write-Verbose 'CSV file has been imported into a hash table. You do not need to do this again'
-                Remove-Variable LocalAdminCSV
+                Invoke-ImportCSV
               }
               
               else {
                 Write-Verbose 'Keeping exisiting CSV import data'
               }
               
+          }
+          
+          else {
+            Write-Verbose '$Global:LocalAdminHashTable does not exist'
+            Invoke-ImportCSV
           }
           
         }
