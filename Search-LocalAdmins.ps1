@@ -68,10 +68,11 @@ Function Search-LocalAdmins {
       .TODO
 
         - Allow for Identity instead of just SID
-        - Output to objects
         - Progress indicator for -ImportCSV
         - Consider changing some Write-Verbose output to Write-Host
         - Add ability to search by specifying an identity
+        - Fix try/catch
+        - Fix whitespace
 
   #>
   
@@ -83,7 +84,11 @@ Function Search-LocalAdmins {
         [Parameter(ValueFromPipelineByPropertyName=$True)]
         [alias('objectSid')]
         [String[]]
-        $SID
+        $SID,
+
+        [Parameter(ValueFromPipelineByPropertyName=$True)]
+        [String]
+        $IdentitySearched
     )
     
     Function Invoke-ImportCSV {
@@ -137,21 +142,30 @@ Function Search-LocalAdmins {
     }
     
     if ($SID) {
-      Write-Verbose "Searching SID: $SID"
+      Write-Verbose "Searching SID: $SID for $IdentitySearched"
       try {
         $SIDResults = $Global:LocalAdminHashTable[$SID].Server
-        if ($SIDResults) {
-          $SIDResults
-        }
-        
-        else {
-          Write-Verbose "SID: $SID not found"
+        if (($SIDResults)) {
+            $SIDResults | ForEach-Object {
+                $ADObject = New-Object System.Security.Principal.SecurityIdentifier($SID)
+                $ObjectDomain = $ADObject.Translate([System.Security.Principal.NTAccount]).value.Split('\')[0]
+                $ObjectName = $ADObject.Translate([System.Security.Principal.NTAccount]).value.Split('\')[1]
+                $Properties = @{
+                    Server = $_
+                    IdentitySearched = $IdentitySearched
+                    ObjectDomain = $ObjectDomain
+                    ObjectName = $ObjectName           
+                }
+                $ServerObject = New-Object -TypeName PSObject -Property $Properties
+                $ServerObject
+            }
         }
       }
       
       catch {
         Write-Error 'No CSV file currently imported. Use "-ImportCSV <CSV File>"'
         Write-Warning 'You will only need to run -ImportCSV once per PowerShell session'
+        #$_.Exception
       }
     }
     
