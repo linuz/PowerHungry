@@ -39,11 +39,20 @@ Function Search-LocalAdmins {
 
       .PARAMETER SID
 
-      Mandatory.
+          Mandatory.
 
-      SID of object to search CSV file for. Can be a User or Group.
+          SID of object to search CSV file for. Can be a User or Group.
 
-      Accepted as a parameter or through a Pipeline
+          Accepted as a parameter or through a Pipeline
+      
+      .PARAMETER CheckDelegation
+
+
+          If boxes are found to have admin access on, will check
+
+          those boxes for the "TrustedForDelegation" flag and return it
+
+          This will make the results return much slower for now.
 
       .EXAMPLE
       
@@ -71,7 +80,6 @@ Function Search-LocalAdmins {
         - Progress indicator for -ImportCSV
         - Consider changing some Write-Verbose output to Write-Host
         - Add ability to search by specifying an identity
-        - Fix try/catch
         - Fix whitespace
 
   #>
@@ -88,7 +96,13 @@ Function Search-LocalAdmins {
 
         [Parameter(ValueFromPipelineByPropertyName=$True)]
         [String]
-        $IdentitySearched
+        $IdentitySearched,
+
+        [String]
+        $Server,
+
+        [Switch]
+        $CheckDelegation
     )
     
     Function Invoke-ImportCSV {
@@ -145,27 +159,46 @@ Function Search-LocalAdmins {
       Write-Verbose "Searching SID: $SID for $IdentitySearched"
       try {
         $SIDResults = $Global:LocalAdminHashTable[$SID].Server
-        if (($SIDResults)) {
-            $SIDResults | ForEach-Object {
+      }
+      Catch {
+        Write-Error 'No CSV file currently imported. Use "-ImportCSV <CSV File>"'
+        Write-Warning 'You will only need to run -ImportCSV once per PowerShell session'
+      }
+      
+      if ($SIDResults) {
+          $SIDResults | ForEach-Object {
+            try {
                 $ADObject = New-Object System.Security.Principal.SecurityIdentifier($SID)
                 $ObjectDomain = $ADObject.Translate([System.Security.Principal.NTAccount]).value.Split('\')[0]
                 $ObjectName = $ADObject.Translate([System.Security.Principal.NTAccount]).value.Split('\')[1]
-                $Properties = @{
-                    Server = $_
-                    IdentitySearched = $IdentitySearched
-                    ObjectDomain = $ObjectDomain
-                    ObjectName = $ObjectName           
-                }
-                $ServerObject = New-Object -TypeName PSObject -Property $Properties
-                $ServerObject
             }
-        }
-      }
-      
-      catch {
-        Write-Error 'No CSV file currently imported. Use "-ImportCSV <CSV File>"'
-        Write-Warning 'You will only need to run -ImportCSV once per PowerShell session'
-        #$_.Exception
+            catch {
+              Write-Verbose "WARNING: Can not resolve name for SID: $SID"
+            }
+              $ServerObject = New-Object PSObject
+              $ServerObject | Add-Member NoteProperty 'DNSHostName' $_
+              $ServerObject | Add-Member NoteProperty 'IdentitySearched' $IdentitySearched
+              $ServerObject | Add-Member NoteProperty 'objectName' $ObjectName
+              $ServerObject | Add-Member NoteProperty 'objectDomain' $ObjectDomain
+
+              # Check if returned boxes for the "TrustedForDelegation" flag
+              if ($CheckDelegation) {
+                  $ServerName = $ServerObject.DNSHostName.split('.')[0]
+                  Write-Verbose "Checking $ServerName for the `"TrustedForDelegation`" flag"
+                  try {
+                    if ((Get-ADComputer -Server $Server -Identity $ServerName -Properties TrustedForDelegation).TrustedForDelegation) {
+                        $ServerObject | Add-Member NoteProperty 'TrustedForDelegation' $True
+                    }
+                    else {
+                        $ServerObject | Add-Member NoteProperty 'TrustedForDelegation' $False
+                    }
+                  }
+                  catch {
+                    Write-Verbose "Can not find the host $ServerName"  
+                  }   
+              }
+              $ServerObject
+          }
       }
     }
     
