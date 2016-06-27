@@ -18,8 +18,7 @@ Function Get-EffectiveGroups {
 
       Get-EffectiveGroup can take an Identity from the parameter or a pipeline
 
-      There are the -Quick and -Tree switches that change the output and how
-      Get-EffectiveGroup operates.
+      The -Tree switche changes the output and how Get-EffectiveGroup operates.
 
       Thanks to @harmj0y for his feedback and of course for PowerView (Great reference)
       <https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1>
@@ -36,14 +35,6 @@ Function Get-EffectiveGroups {
 
       Domain Controller address to query. Defaults to current domain
 
-      .PARAMETER Quick
-
-      Will dump TokenGroups (https://msdn.microsoft.com/en-us/library/ms680275%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396)
-      from ActiveDirectory. Much quicker but with less context (such as child group). Will also send less
-      traffic to the domain controller
-      Note: DistributionGroups are not listed under TokenGroups
-      PS: Thanks @harmj0y for the information on this!
-
       .PARAMETER Tree
 
       Will print groups out in an hierarchical format to the console (not as objects)
@@ -59,12 +50,6 @@ Function Get-EffectiveGroups {
       PS C:\> Get-EffectiveGroups
 
       Get Current User's effective groups (nested groups)
-
-      .EXAMPLE
-      
-      PS C:\> Get-EffectiveGroups -Quick
-        
-      Get Current User's effective groups with the TokenGroups method (quicker)
 
       .EXAMPLE
       
@@ -96,12 +81,9 @@ Function Get-EffectiveGroups {
       - Remove Duplicates from groups list
       - More Verbose output
       - Remove use of AD cmdlets
-      - Look into Object parameter ordering (compatiability with PowerShell 2)
       - Consider hiding certain local groups (eg: BUILTIN\Users [SID: S-1-5-32-545])
       - When returning identity in object, figure out how to get domain efficiently (currently <UNKNOWN>)
       - The -Identity parameter (alias for SamAccountName) is not showing up for Autocomplete in Powershell.
-      - Switch default behavior with -Quick behavior
-      - Fix Try Catches
       - Fix whitespace
 
   #>
@@ -116,9 +98,6 @@ Function Get-EffectiveGroups {
         
         [String]
         $Server,
-        
-        [Switch]
-        $Quick,
 
         [Switch]
         $Tree,
@@ -155,58 +134,9 @@ Function Get-EffectiveGroups {
       # Recursively get all groups for the idenitity, the groups of those groups, etc
       Function Get-ADGroupRecurse {
         $ParentIdentity = $args[0]
-        
-        # Will not output Distribution Groups, though they are not security-enabled, therefore not needed
-        if ($Quick) {
-          # Allow searching for users, groups, computers, etc when using -Quick
-          $ADObject = Get-ADObject -Server $Server -Properties objectSID, SamAccountName -Filter {
-            DistinguishedName -EQ $Identity 
-            -OR SamAccountName -EQ $Identity
-            -OR ObjectGUID -EQ $Identity
-          -OR objectSID -EQ $Identity}
-          Write-Verbose "Getting TokenGroups with Get-ADObject for $Identity"
 
-          if (! $NoSelfIdentity) {
-            # Return current identity's as an object
-            Write-Verbose 'Returning current Identity'
-            $Properties = @{
-                objectSID  = $ADObject.ObjectSID
-                domain = "<UNKNOWN>"
-                SamAccountName = $ADObject.SamAccountName
-                IdentitySearched = $Identity
-              }
-            $SelfIdentityObject = New-Object -TypeName PSObject -Property $Properties
-            $SelfIdentityObject
-            #$ADObject | Select-Object ObjectSID, domain, SamAccountName, IdentitySearched
-          }
-
-          # Return Identity's TokenGroups (unrolled nested groups) as objects
-          Write-Verbose "Returning Identity's TokenGroups"
-          Get-ADObject -Server $Server -SearchScope Base -SearchBase $ADObject.DistinguishedName -Filter * -Properties tokenGroups | Select-Object -ExpandProperty TokenGroups| ForEach {
-            $TokenSID = $_
-            $TokenObject = (New-Object System.Security.Principal.SecurityIdentifier($TokenSID))
-            try {
-              $TokenGroupDomain = $TokenObject.Translate([System.Security.Principal.NTAccount]).value.Split('\')[0]
-              $TokenGroupName = $TokenObject.Translate([System.Security.Principal.NTAccount]).value.Split('\')[1]
-              $Properties = @{
-                objectSID  = $TokenSID
-                domain = $TokenGroupDomain
-                SamAccountName = $TokenGroupName
-                IdentitySearched = $Identity
-              }
-              $GroupObject = New-Object -TypeName PSObject -Property $Properties
-              $GroupObject
-            }
-
-            catch {
-              #Write-Warning "Can not resolve name for SID: $TokenSID"
-              Write-Verbose "WARNING: Can not resolve name for SID: $TokenSID"
-            }
-                
-          }
-        }
-        # Print out groups in a hierarchical format
-        elseif ($Tree) {
+        # Print out groups in a hierarchical format (much slower and less information)
+        if ($Tree) {
           Get-AdPrincipalGroupMembership -Server $Server -Identity $ParentIdentity | ForEach-Object {
             $Script:RecursionCount += 1
             if ($Script:RecursionCount -gt 1) {
@@ -221,33 +151,50 @@ Function Get-EffectiveGroups {
             }
           }
         }
+                
         else {
-          try {
-            # Return Identity's nested groups, recursively, as objects
-            Write-Verbose "Returning Identity's nested groups"
-            Get-AdPrincipalGroupMembership -Server $Server -Identity $ParentIdentity | ForEach-Object {
-              $Properties = @{
-                Name = $_.name
-                SamAccountName = $_.SamAccountName
-                DistingquishedName = $_.DistinguishedName
-                ParentIdentity = $ParentIdentity
-                IdentitySearched = $Identity
-                objectSID = $_.SID
-              }
-              $GroupObject = New-Object -TypeName PSObject -Property $Properties
-              $GroupObject
-              Get-ADGroupRecurse $_.SamAccountName
-            }
-          }
+          # Allow searching for users or groups
+          $ADObject = Get-ADObject -Server $Server -Properties objectSID, SamAccountName -Filter {
+            DistinguishedName -EQ $Identity 
+            -OR SamAccountName -EQ $Identity
+            -OR ObjectGUID -EQ $Identity
+            -OR objectSID -EQ $Identity}
         
-          catch {
-            Write-Warning "ERROR: Something went wrong with $ParentIdentity"
+          Write-Verbose "Getting TokenGroups with Get-ADObject for $Identity"
+          if (!$NoSelfIdentity) {
+            $SelfIdentityObject = New-Object PSObject
+            $SelfIdentityObject | Add-Member NoteProperty 'SamAccountName' $ADObject.SamAccountName
+            $SelfIdentityObject | Add-Member NoteProperty 'domain' '<UNKNOWN>'
+            $SelfIdentityObject | Add-Member NoteProperty 'objectSID' $ADObject.objectSID
+            $SelfIdentityObject | Add-Member NoteProperty 'IdentitySearched' $Identity
+            $SelfIdentityObject
+          }
+
+          # Return Identity's TokenGroups (unrolled nested groups) as objects
+          Write-Verbose "Returning Identity's TokenGroups"
+          Write-Verbose $ADObject.DistinguishedName
+      
+          Get-ADObject -Server $Server -SearchScope Base -SearchBase $ADObject.DistinguishedName -Filter * -Properties tokenGroups | Select-Object -ExpandProperty TokenGroups| ForEach {
+            try {
+                $TokenSID = $_
+                $TokenGroup = New-Object System.Security.Principal.SecurityIdentifier($TokenSID)
+                $TokenGroupDomain = $TokenGroup.Translate([System.Security.Principal.NTAccount]).value.Split('\')[0]
+                $TokenGroupName = $TokenGroup.Translate([System.Security.Principal.NTAccount]).value.Split('\')[1]
+            }
+            
+            catch {
+              Write-Verbose "WARNING: Can not resolve name for SID: $TokenSID"
+            }  
+            
+            $GroupObject = New-Object PSObject
+            $GroupObject | Add-Member NoteProperty 'SamAccountName' $TokenGroupName
+            $GroupObject | Add-Member NoteProperty 'domain' $TokenGroupDomain
+            $GroupObject | Add-Member NoteProperty 'objectSID' $TokenSID
+            $GroupObject | Add-Member NoteProperty 'IdentitySearched' $Identity
+            $GroupObject    
           }
         }
-        
-
       }
-      
       Get-ADGroupRecurse $Identity
     }
 }
