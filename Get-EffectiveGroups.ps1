@@ -98,9 +98,11 @@ Function Get-EffectiveGroups {
       - Remove use of AD cmdlets
       - Look into Object parameter ordering (compatiability with PowerShell 2)
       - Consider hiding certain local groups (eg: BUILTIN\Users [SID: S-1-5-32-545])
-      - When returning identity in object, figure out how to get domain efficiently (currently null) and IdentitySearched
+      - When returning identity in object, figure out how to get domain efficiently (currently <UNKNOWN>)
       - The -Identity parameter (alias for SamAccountName) is not showing up for Autocomplete in Powershell.
       - Switch default behavior with -Quick behavior
+      - Fix Try Catches
+      - Fix whitespace
 
   #>
   
@@ -157,17 +159,25 @@ Function Get-EffectiveGroups {
         # Will not output Distribution Groups, though they are not security-enabled, therefore not needed
         if ($Quick) {
           # Allow searching for users, groups, computers, etc when using -Quick
-          $ADObject = Get-ADObject  -Properties objectSID, SamAccountName -Filter {
+          $ADObject = Get-ADObject -Server $Server -Properties objectSID, SamAccountName -Filter {
             DistinguishedName -EQ $Identity 
             -OR SamAccountName -EQ $Identity
             -OR ObjectGUID -EQ $Identity
           -OR objectSID -EQ $Identity}
           Write-Verbose "Getting TokenGroups with Get-ADObject for $Identity"
-          
+
           if (! $NoSelfIdentity) {
             # Return current identity's as an object
             Write-Verbose 'Returning current Identity'
-            $ADObject | Select-Object ObjectSID, domain, SamAccountName, IdentitySearched
+            $Properties = @{
+                objectSID  = $ADObject.ObjectSID
+                domain = "<UNKNOWN>"
+                SamAccountName = $ADObject.SamAccountName
+                IdentitySearched = $Identity
+              }
+            $SelfIdentityObject = New-Object -TypeName PSObject -Property $Properties
+            $SelfIdentityObject
+            #$ADObject | Select-Object ObjectSID, domain, SamAccountName, IdentitySearched
           }
 
           # Return Identity's TokenGroups (unrolled nested groups) as objects
@@ -222,6 +232,7 @@ Function Get-EffectiveGroups {
                 DistingquishedName = $_.DistinguishedName
                 ParentIdentity = $ParentIdentity
                 IdentitySearched = $Identity
+                objectSID = $_.SID
               }
               $GroupObject = New-Object -TypeName PSObject -Property $Properties
               $GroupObject
