@@ -88,7 +88,8 @@
 		- Progress indicator for CSV import
 		- Improve verbose output
 		- Remove dependency on ActiveDirectory cmdlets
-
+		- Improve CSV import times
+		- Allow for output pipe into Get-ADComputer
   #>
   
   [CmdletBinding()]
