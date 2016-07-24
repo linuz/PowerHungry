@@ -1,4 +1,4 @@
-﻿Function Search-LocalAdmins {
+Function Search-LocalAdmins {
   <#
 
       .SYNOPSIS
@@ -39,11 +39,20 @@
 
       .PARAMETER SID
 
-      Mandatory.
+          Mandatory.
 
-      SID of object to search CSV file for. Can be a User or Group.
+          SID of object to search CSV file for. Can be a User or Group.
 
-      Accepted as a parameter or through a Pipeline
+          Accepted as a parameter or through a Pipeline
+      
+      .PARAMETER CheckDelegation
+
+
+          If boxes are found to have admin access on, will check
+
+          those boxes for the "TrustedForDelegation" flag and return it
+
+          This will make the results return much slower for now.
 
       .EXAMPLE
       
@@ -68,9 +77,10 @@
       .TODO
 
         - Allow for Identity instead of just SID
-        - Output to objects
         - Progress indicator for -ImportCSV
         - Consider changing some Write-Verbose output to Write-Host
+        - Add ability to search by specifying an identity
+        - Fix whitespace
 
   #>
   
@@ -80,9 +90,29 @@
         $ImportCSV,
 
         [Parameter(ValueFromPipelineByPropertyName=$True)]
+        [alias('objectSid')]
         [String[]]
-        $SID
+        $SID,
+
+        [Parameter(ValueFromPipelineByPropertyName=$True)]
+        [String]
+        $IdentitySearched,
+
+        [String]
+        $Server,
+
+        [Switch]
+        $CheckDelegation
     )
+    
+    Function Invoke-ImportCSV {
+      Write-Output "Importing CSV File: $ImportCSV..."
+      $LocalAdminCSV = Import-CSV $ImportCSV
+      Write-Verbose 'Writing to $Global:LocalAdminHashTable varaible (This may take a minute or two...)'
+      $Global:LocalAdminHashTable = $LocalAdminCSV | Group-Object -AsHashTable -AsString -Property SID
+      Write-Verbose 'CSV file has been imported into a hash table. You do not need to do this again'
+      Remove-Variable LocalAdminCSV
+    }
 
     # Lots of memory management in here, thus lots of verbosity with the -Verbose flag
     if ($ImportCSV) {
@@ -98,18 +128,18 @@
               if ((read-host 'Do you want to remove any previous CSV import data? (Y/N)') -eq 'y') {
                 Write-Verbose 'Removing previous CSV import data'
                 Remove-Variable -Scope Global LocalAdminHashTable
-                Write-Output "Importing CSV File: $ImportCSV..."
-                $LocalAdminCSV = Import-CSV $ImportCSV
-                Write-Verbose "Writing to `$Global:LocalAdminHashTable varaible (This may take a minute or two...)"
-                $Global:LocalAdminHashTable = $LocalAdminCSV | Group-Object -AsHashTable -AsString -Property SID
-                Write-Verbose 'CSV file has been imported into a hash table. You do not need to do this again'
-                Remove-Variable LocalAdminCSV
+                Invoke-ImportCSV
               }
               
               else {
                 Write-Verbose 'Keeping exisiting CSV import data'
               }
               
+          }
+          
+          else {
+            Write-Verbose '$Global:LocalAdminHashTable does not exist'
+            Invoke-ImportCSV
           }
           
         }
@@ -126,21 +156,49 @@
     }
     
     if ($SID) {
-      Write-Verbose "Searching SID: $SID"
+      Write-Verbose "Searching SID: $SID for $IdentitySearched"
       try {
         $SIDResults = $Global:LocalAdminHashTable[$SID].Server
-        if ($SIDResults) {
-          $SIDResults
-        }
-        
-        else {
-          Write-Verbose "SID: $SID not found"
-        }
       }
-      
-      catch {
+      Catch {
         Write-Error 'No CSV file currently imported. Use "-ImportCSV <CSV File>"'
         Write-Warning 'You will only need to run -ImportCSV once per PowerShell session'
+      }
+      
+      if ($SIDResults) {
+          $SIDResults | ForEach-Object {
+            try {
+                $ADObject = New-Object System.Security.Principal.SecurityIdentifier($SID)
+                $ObjectDomain = $ADObject.Translate([System.Security.Principal.NTAccount]).value.Split('\')[0]
+                $ObjectName = $ADObject.Translate([System.Security.Principal.NTAccount]).value.Split('\')[1]
+            }
+            catch {
+              Write-Verbose "WARNING: Can not resolve name for SID: $SID"
+            }
+              $ServerObject = New-Object PSObject
+              $ServerObject | Add-Member NoteProperty 'DNSHostName' $_
+              $ServerObject | Add-Member NoteProperty 'IdentitySearched' $IdentitySearched
+              $ServerObject | Add-Member NoteProperty 'objectName' $ObjectName
+              $ServerObject | Add-Member NoteProperty 'objectDomain' $ObjectDomain
+
+              # Check if returned boxes for the "TrustedForDelegation" flag
+              if ($CheckDelegation) {
+                  $ServerName = $ServerObject.DNSHostName.split('.')[0]
+                  Write-Verbose "Checking $ServerName for the `"TrustedForDelegation`" flag"
+                  try {
+                    if ((Get-ADComputer -Server $Server -Identity $ServerName -Properties TrustedForDelegation).TrustedForDelegation) {
+                        $ServerObject | Add-Member NoteProperty 'TrustedForDelegation' $True
+                    }
+                    else {
+                        $ServerObject | Add-Member NoteProperty 'TrustedForDelegation' $False
+                    }
+                  }
+                  catch {
+                    Write-Verbose "Can not find the host $ServerName"  
+                  }   
+              }
+              $ServerObject
+          }
       }
     }
     
