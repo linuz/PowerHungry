@@ -90,6 +90,7 @@
 		- Remove dependency on ActiveDirectory cmdlets
 		- Improve CSV import times
 		- Allow for output pipe into Get-ADComputer
+		- Autocomplete for CSV file input prompt
   #>
   
   [CmdletBinding()]
