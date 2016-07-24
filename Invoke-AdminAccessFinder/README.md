@@ -26,10 +26,13 @@ or
 Example Usage:
 ----------------
 Searches for hosts that the current user has access to. If no previous CSV file was specified during this PowerShell session, it will ask for one.
+
     PS C:\> Invoke-AdminAccessFinder 
     
 Searches for host that the 'JohnDoe' user has access to. 
+
     PS C:\> Invoke-AdminAccessFinder -SamAccountName JohnDoe
 	
 Uses 'Get-AdGroupMember' to get members of the 'Domain Admins' group and checks each member to see what hosts they have access to
+
     PS C:\> Get-ADGroupMember "Domain Admins" | Invoke-AdminAccessFinder
