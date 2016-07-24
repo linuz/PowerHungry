@@ -12,11 +12,13 @@ Thanks to @harmj0y for the random PowerShell tips and of course for PowerView <h
 Requirements:
 ----------------
 **PowerView's Invoke-EnumerateLocalAdmin CSV Output**:
+
     PS C:\> Invoke-EnumerateLocalAdmin -Threads 100 -OutFile localadmins.csv
 or
     PS C:\> Invoke-EnumerateLocalAdmin -Threads 100 | Export-CSV localadmins.csv
 
 **Active Directory Cmdlets**:
+
     PS C:\> Import-Module ActiveDirectory
 	
 Example Usage:
