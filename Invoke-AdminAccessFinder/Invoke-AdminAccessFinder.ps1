@@ -78,7 +78,7 @@
 
       .EXAMPLE
 
-        PS C:\> Invoke-AdminAccessFinder Invoke-AdminAccessFinder -SamAccountName "Domain Admins" -Clean
+        PS C:\> Invoke-AdminAccessFinder -SamAccountName "Domain Admins" -Clean
 
         Removes the exisiting data-set (previously imported CSV file) and will ask for a new CSV file to import.
         Will then search for hosts that the 'Domain Admins' group has admin access to.
