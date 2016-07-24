@@ -9,7 +9,7 @@
         Required Dependencies: ActiveDirectory cmdlets,
         PowerView's Invoke-EnumerateLocalAdmin CSV Output File,  
         Optional Dependencies: None
-        Minimum PowerShell Version = 3.0
+        Minimum PowerShell Version = 2.0
 
 
       .DESCRIPTION
@@ -193,14 +193,14 @@ Function Invoke-ImportPowerViewAdminsCSV {
   Write-Verbose "Using $CSVFilePath"
   Write-Verbose 'Checking if CSV file contains the proper headers' 
   try {    
-    $CSVHeaders = ((Get-Content $CSVFilePath | Select-Object -First 2).Split(',')) -replace '"'
+    $CSVHeaders = ((Get-Content $CSVFilePath | Select-Object -First 2) -split',') -replace '"'
   }
   catch {
     $_.Exception.Message
     $_.Exception.ItemName
     Break
   }
-  if (!($CSVHeaders.contains('Server') -and $CSVHeaders.contains('AccountName') -and $CSVHeaders.contains('SID'))) {
+  if (!($CSVHeaders -contains'Server' -and $CSVHeaders -contains'AccountName' -and $CSVHeaders -contains'SID')) {
     Write-Error "CSV file is not valid. Expecting CSV file from 'PowerView's Invoke-EnumerateLocalAdmin -OutFile' parameter"
     break
   }
@@ -305,7 +305,7 @@ Function Search-LocalAdmins {
   )
     
   Write-Verbose "Searching the SID: $objectSID for $IdentitySearched"
-  $SIDResults = $Global:LocalAdminHashTable[$objectSID].Server
+  $SIDResults = $Global:LocalAdminHashTable[$objectSID] | Select-Object -ExpandProperty Server
     
   if ($SIDResults) {
     $SIDResults | ForEach-Object {
