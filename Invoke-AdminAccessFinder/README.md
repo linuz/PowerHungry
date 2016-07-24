@@ -19,7 +19,7 @@ or
 
     PS C:\> Invoke-EnumerateLocalAdmin -Threads 100 | Export-CSV localadmins.csv
 
-**Active Directory Cmdlets**:
+**[Active Directory Cmdlets](https://technet.microsoft.com/en-us/library/ee617195.aspx)**:
 
     PS C:\> Import-Module ActiveDirectory
 	
