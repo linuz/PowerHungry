@@ -85,6 +85,9 @@
         Note: Don't forget to remove this flag for subsequent executions unless it is desired
 
       .TODO
+		- Progress indicator for CSV import
+		- Improve verbose output
+		- Remove dependency on ActiveDirectory cmdlets
 
   #>
   
