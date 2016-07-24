@@ -1,4 +1,4 @@
-﻿Function Invoke-AdminAccessFinder {
+Function Invoke-AdminAccessFinder {
   <#
       .SYNOPSIS
 
@@ -247,7 +247,7 @@ Function Get-EffectiveGroups {
   Write-Verbose "Searching $SamAccountName"
         
   # Allow searching for users or groups
-  $ADObject = Get-ADObject -Server $Server -Properties objectSid, SamAccountName -Filter {SamAccountName -EQ $SamAccountName}
+  $ADObject = ActiveDirectory\Get-ADObject -Server $Server -Properties objectSid, SamAccountName -Filter {SamAccountName -EQ $SamAccountName}
   if (!$ADObject) {
     Write-Error "$SamAccountName was not found on $Server"
     break
@@ -266,7 +266,7 @@ Function Get-EffectiveGroups {
   # Return Identity's TokenGroups (unrolled nested groups) as objects
   Write-Verbose "Returning Identity's TokenGroups"
       
-  Get-ADObject -Server $Server -SearchScope Base -SearchBase $ADObject.DistinguishedName -Filter * -Properties tokenGroups | Select-Object -ExpandProperty TokenGroups| ForEach {
+  ActiveDirectory\Get-ADObject -Server $Server -SearchScope Base -SearchBase $ADObject.DistinguishedName -Filter * -Properties tokenGroups | Select-Object -ExpandProperty TokenGroups| ForEach {
     $TokenGroupName = Get-SamAccountNameFromSID $_
     $GroupObject = New-Object PSObject
     $GroupObject | Add-Member NoteProperty 'SamAccountName' $TokenGroupName
@@ -326,7 +326,7 @@ Function Search-LocalAdmins {
         $ServerName = $ServerObject.DNSHostName.split('.')[0]
         Write-Verbose "Checking $ServerName for the `"TrustedForDelegation`" flag"
         try {
-          if ((Get-ADComputer -Server $Server -Identity $ServerName -Properties TrustedForDelegation).TrustedForDelegation) {
+          if ((ActiveDirectory\Get-ADComputer -Server $Server -Identity $ServerName -Properties TrustedForDelegation).TrustedForDelegation) {
             $ServerObject | Add-Member NoteProperty 'TrustedForDelegation' $True
           }
           else {
