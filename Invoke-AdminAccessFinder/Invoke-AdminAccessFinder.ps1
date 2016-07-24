@@ -85,7 +85,12 @@
         Note: Don't forget to remove this flag for subsequent executions unless it is desired
 
       .TODO
-
+		- Progress indicator for CSV import
+		- Improve verbose output
+		- Remove dependency on ActiveDirectory cmdlets
+		- Improve CSV import times
+		- Allow for output pipe into Get-ADComputer
+		- Autocomplete for CSV file input prompt
   #>
   
   [CmdletBinding()]
