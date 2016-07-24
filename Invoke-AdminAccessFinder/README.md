@@ -14,7 +14,9 @@ Requirements:
 **PowerView's Invoke-EnumerateLocalAdmin CSV Output**:
 
     PS C:\> Invoke-EnumerateLocalAdmin -Threads 100 -OutFile localadmins.csv
+    
 or
+
     PS C:\> Invoke-EnumerateLocalAdmin -Threads 100 | Export-CSV localadmins.csv
 
 **Active Directory Cmdlets**:
