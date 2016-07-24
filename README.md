@@ -5,25 +5,8 @@ PowerHungry is a repository of experimental PowerShell tools I am developing mai
 
 Current Scripts:
 ----------------
-**Search-LocalAdmins**: Finds boxes a specified identity has local admin on,  
-based on the CSV output from **[PowerView's](https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1) Invoke-EnumerateLocalAdmin**.
+**Invoke-AdminAccessFinder**: Invoke-AdminAccessFinder is a supplement to PowerView's Invoke-EnumerateLocalAdmin that will search a list of hosts that the specified SamAccountName (user or group) has administrative access to. Invoke-AdminAccessFinder works by importing the CSV output from  PowerView's Invoke-EnumerateLocalAdmin function which should be generated ahead of time Invoke-AdminAccessFinder identifies the SamAccountName specified as well as it's group membership, recursively (with TokenGroups) so that it can search every single group the specified identity is a part of.  Invoke-AdminAccessFinder will return a list of hosts that the identity and any of it's group memberships have administrative access on.
 
-**Get-EffectiveGroups**: Recursively enumerate groups a specific identity is a member of
+On first execution of Invoke-AdminAccessFinder, it will ask for the CSV file to import. Once imported, Invoke-AdminAccessFinder will not ask for the CSV file again for the duration of the PowerShell session, unless the -Clean switch is specified.
 
-Example Usage:
-----------------
-(Read individual scripts for individual usage)
-
-Get computer names that a particular user has admin access to
-
-    PS C:\> Search-LocalAdmins -ImportCSV c:\test\localadmins.csv
-    PS C:\> Get-AdUser -Identity "JohnDoe" | Get-EffectiveGroups -Quick | ForEach-Object {$_ | Search-LocalAdmins}
-    
-Example Usage Explanation:
-----------------
-* **Search-LocalAdmins -ImportCSV c:\test\localadmins.csv** = Imports the Invoke-EnumerateLocalAdmin CSV into memory for processing  
-* **Get-AdUser -Identity "JohnDoe"** = Get JohnDoe's user object from the Active Directory  
-* **| Get-EffectiveGroups -Quick** = Get JohnDoe's effective groups (nested groups)  
-* **| ForEach-Object {$_ | Search-LocalAdmins}** = Searches all of JohnDoe's effective groups for admin access based on CSV file imported earlier  
-    
-Note: **Search-LocalAdmins -ImportCSV** only needs to be done once per PowerShell session
+Thanks to @harmj0y for the random PowerShell tips and of course for PowerView <https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1>

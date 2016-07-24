@@ -70,8 +70,6 @@
         - Allow for Identity instead of just SID
         - Output to objects
         - Progress indicator for -ImportCSV
-        - Add checking for proper CSV format
-        - Search for Identity SID in the HashTable as well
         - Consider changing some Write-Verbose output to Write-Host
 
   #>
