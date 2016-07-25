@@ -146,6 +146,23 @@ Function Invoke-AdminAccessFinder {
   }
 }
 
+function Get-FileName($initialDirectory) {
+
+  <#
+
+      .DESCRIPTION
+        Opens a file dialog box for a user to interactively select a file.
+        Returns the filename.
+  #> 
+
+    [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms") | Out-Null
+    $OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
+    $OpenFileDialog.initialDirectory = $initialDirectory
+    $OpenFileDialog.filter = "CSV Files (*.csv)| *.csv|All Files (*.*)|*.*"
+    $OpenFileDialog.ShowDialog() | Out-Null
+    $OpenFileDialog.filename
+}
+
 Function Get-SamAccountNameFromSID {
 
   <#
@@ -185,7 +202,7 @@ Function Invoke-ImportPowerViewAdminsCSV {
   }
 
   Write-Verbose 'Prompting for CSV file'
-  $CSVFilePath = (read-host 'Please enter the Local Admin CSV File Path: ')
+  $CSVFilePath = Get-FileName
   if ($CSVFilePath -EQ '') {
     Write-Error 'Invalid File Path. Empty string supplied'
     Break
