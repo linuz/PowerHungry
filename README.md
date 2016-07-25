@@ -10,3 +10,7 @@ Current Scripts:
 On first execution of Invoke-AdminAccessFinder, it will ask for the CSV file to import. Once imported, Invoke-AdminAccessFinder will not ask for the CSV file again for the duration of the PowerShell session, unless the -Clean switch is specified.
 
 Thanks to  [@harmj0y](https://twitter.com/harmj0y) for the random PowerShell tips and of course for PowerView <https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1>
+
+**Add-LocalAdmin**:  Adds a user to the local administrator group for the specified computer. (Without using net.exe)
+
+**Delete-LocalUser**:  Deletes a local user from the specified computer (Without using net.exe)
