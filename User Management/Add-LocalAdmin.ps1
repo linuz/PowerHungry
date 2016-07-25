@@ -10,7 +10,7 @@ Function Add-LocalAdmin {
             
         .DESCRIPTION
             Add-LocalAdmin will create a specified user and adds it to the local administrators group 
-            for the specific computer, using AdsI. You must have elevated rights to the target computer in 
+            for the specific computer, using ADSI. You must have elevated rights to the target computer in 
             order to do this.
             Add-LocalAdmin is useful for bypassing end-point monitoring alerts that flag on net.exe usage.
             
