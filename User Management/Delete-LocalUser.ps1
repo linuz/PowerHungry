@@ -9,12 +9,12 @@ Function Delete-LocalUser {
             Minimum PowerShell Version = 2.0
             
         .DESCRIPTION
-            Delete-LocalUser will delete a local user from the specified computer, using WMI. 
+            Delete-LocalUser will delete a local user from the specified computer, using ADSI. 
             You must have elevated rights to the target computer in order to do this.
             Delete-LocalUser is useful for bypassing end-point monitoring alerts that flag on net.exe usage.
             
         .PARAMETER ComputerName
-            Specify the computer to run the remote WMI command for.
+            Specify the computer to target.
             Defaults to current computer
             
         .PARAMETER Username
