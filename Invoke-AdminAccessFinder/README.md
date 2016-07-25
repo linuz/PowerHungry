@@ -3,23 +3,23 @@
 
 Invoke-AdminAccessFinder
 ----------------
-Invoke-AdminAccessFinder is a supplement to PowerView's Invoke-EnumerateLocalAdmin that will search a list of hosts that the specified SamAccountName (user or group) has administrative access to. Invoke-AdminAccessFinder works by importing the CSV output from  PowerView's Invoke-EnumerateLocalAdmin function which should be generated ahead of time Invoke-AdminAccessFinder identifies the SamAccountName specified as well as it's group membership, recursively (with TokenGroups) so that it can search every single group the specified identity is a part of.  Invoke-AdminAccessFinder will return a list of hosts that the identity and any of it's group memberships have administrative access on.
+Invoke-AdminAccessFinder is a supplement to PowerView's Invoke-EnumerateLocalAdmin. Invoke-AdminAccessFinder will search a list of hosts that the specified user/group has administrative access to. Invoke-AdminAccessFinder gets it's dataset by importing the CSV output from  PowerView's Invoke-EnumerateLocalAdmin function. Invoke-AdminAccessFinder identifies the security group membership for the user/group, recursively (with [TokenGroups] (https://msdn.microsoft.com/en-us/library/ms680275(v=vs.85).aspx)) and will return a list of hosts that the user/group and any of it's group memberships have administrative access on.
 
-On first execution of Invoke-AdminAccessFinder, it will ask for the CSV file to import. Once imported, Invoke-AdminAccessFinder will not ask for the CSV file again for the duration of the PowerShell session, unless the -Clean switch is specified.
+On first execution of Invoke-AdminAccessFinder, you will be prompted to import the CSV file. Invoke-AdminAccessFinder will only ask for the CSV once per PowerShell session, unless the -Clean switch is specified.
 
-Thanks to [@harmj0y](https://twitter.com/harmj0y) for the random PowerShell tips and of course for PowerView <https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1>
+Thanks to [@harmj0y](https://twitter.com/harmj0y) for the some PowerShell tips and of course for PowerView <https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1>
 
 Purpose:
 ----------------
-I built this script to help save time during red team assessments against an Active Directory network. We wanted a way to target specific users and servers during an assessment and avoid just spraying the network looking for any box we can get access to.
+I built this script to help save time during red team assessments against an Active Directory network. I wanted a way to target specific users/servers and avoid just spraying the network looking for any host we can get access to.
 
-This script saves time by allowing us to specifically target boxes we have admin access on. For example, if we gain access to the "EXAMPLE\JohnDoe" domain account from a compromised host, we can use Invoke-AdminAccessFinder to find out which hosts EXAMPLE\JohnDoe has administrative access on, and go target those hosts directory instead of spraying his creds across the entire network.
+This script saves time by allowing you to specifically target hosts that you have administrative access to. For example, if you gain access to the "EXAMPLE\JohnDoe" domain account, you can use Invoke-AdminAccessFinder to discover which hosts EXAMPLE\JohnDoe has administrative access on, and use that information to target those hosts rather than just spraying the credentials across the entire network.
 
 Requirements:
 ----------------
 **[PowerView's Invoke-EnumerateLocalAdmin](https://github.com/PowerShellMafia/PowerSploit/tree/master/Recon) CSV Output**:
 
-Invoke-EnumerateLocalAdmin will query all active machines on a network for it's local administrators. This takes some time but only needs to be done once so doing this ahead of time can be advantageous.
+PowerView's Invoke-EnumerateLocalAdmin will query all active machines on a network for it's local administrators. This takes some time but only needs to be done once so doing this ahead of time can be advantageous.
 
 You will need to generate a CSV file from Invoke-EnumerateLocalAdmin's output if you have not done so already.
 
