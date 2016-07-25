@@ -14,18 +14,15 @@ Function Invoke-AdminAccessFinder {
 
       .DESCRIPTION
 
-        Invoke-AdminAccessFinder is a supplement to PowerView's Invoke-EnumerateLocalAdmin that
-        will search a list of hosts that the specified SamAccountName (user or group)
-        has administrative access to. Invoke-AdminAccessFinder works by importing the CSV output from 
-        PowerView's Invoke-EnumerateLocalAdmin function which should be generated ahead of time
-        Invoke-AdminAccessFinder identifies the SamAccountName specified as well as it's group membership,
-        recursively (with TokenGroups) so that it can search every single group the specified identity is a part of. 
-        Invoke-AdminAccessFinder will return a list of hosts that the identity and any of it's group memberships
-        have administrative access on.
+        Invoke-AdminAccessFinder is a supplement to PowerView's Invoke-EnumerateLocalAdmin. Invoke-AdminAccessFinder will 
+        search a list of hosts that the specified user/group has administrative access to. Invoke-AdminAccessFinder gets 
+        it's dataset by importing the CSV output from  PowerView's Invoke-EnumerateLocalAdmin function. 
+        Invoke-AdminAccessFinder identifies the security group membership for the user/group, recursively (with TokenGroups) 
+        and will return a list of hosts that the user/group and any of it's group memberships have administrative access on.
 
-        On first execution of Invoke-AdminAccessFinder, it will ask for the CSV file to import.
-        Once imported, Invoke-AdminAccessFinder will not ask for the CSV file again for the duration 
-        of the PowerShell session, unless the -Clean switch is specified.
+        On first execution of Invoke-AdminAccessFinder, you will be prompted to import the CSV file. 
+        Invoke-AdminAccessFinder will only ask for the CSV once per PowerShell session, unless the 
+        -Clean switch is specified.
 
         Thanks to @harmj0y for the random PowerShell tips and of course for PowerView
         <https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1>
