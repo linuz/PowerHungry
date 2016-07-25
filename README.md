@@ -1,7 +1,7 @@
 # PowerHungry
 **Twitter: [@DennisMald](https://twitter.com/DennisMald)**
 
-PowerHungry is a repository of experimental PowerShell tools I am developing mainly to hone my PowerShell-Fu.
+PowerHungry is just a stupid name for this repository of experimental PowerShell tools I am developing mainly to hone my PowerShell skills and assist me in my every day work.
 
 Current Scripts:
 ----------------
