@@ -2,7 +2,7 @@ Function Invoke-AdminAccessFinder {
   <#
       .SYNOPSIS
 
-        Locates hosts that a specific user or group identity has administrative access on. 
+        Searches a list of hosts that a specific user or group identity has administrative access on. 
         Results are based on the CSV output from PowerView's Invoke-EnumerateLocalAdmin.
         Author: Dennis Maldonado (@DennisMald)
         License: BSD 3-Clause
