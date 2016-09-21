@@ -152,6 +152,7 @@ function Get-FileName($initialDirectory) {
         Returns the filename.
   #> 
 
+    Write-Host "Select the CSV file from PowerView's Invoke-EnumerateLocalAdmin output..."
     [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms") | Out-Null
     $OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
     $OpenFileDialog.initialDirectory = $initialDirectory
@@ -225,13 +226,13 @@ Function Invoke-ImportPowerViewAdminsCSV {
   }
 
   $Global:LocalAdminHashTableName = $CSVFilePath
-  Write-Output "Importing CSV File: $Global:LocalAdminHashTableName"
+  Write-Host "Importing CSV File: $Global:LocalAdminHashTableName"
   $LocalAdminCSV = Import-CSV $Global:LocalAdminHashTableName
   Write-Verbose "Copying $Global:LocalAdminHashTableName to memory (This may take a minute or two...)"
   $Global:LocalAdminHashTable = $LocalAdminCSV | Group-Object -AsHashTable -AsString -Property SID
   Write-Verbose "The $Global:LocalAdminHashTableName CSV file has been imported into a hash table in memory."
   Write-Verbose 'Performing cleanup and garbage collection'
-  Write-Output 'Import complete'
+  Write-Host 'Import complete'
   Remove-Variable LocalAdminCSV
   [System.GC]::collect() 
 }
