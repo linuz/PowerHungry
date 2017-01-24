@@ -220,7 +220,7 @@ Function Invoke-ImportPowerViewAdminsCSV {
     $_.Exception.ItemName
     Break
   }
-  if (!($CSVHeaders -contains'Server' -and $CSVHeaders -contains'AccountName' -and $CSVHeaders -contains'SID')) {
+  if (!(($CSVHeaders -contains'Server' -or $CSVHeaders -contains'ComputerName') -and $CSVHeaders -contains'AccountName' -and $CSVHeaders -contains'SID')) {
     Write-Error "CSV file is not valid. Expecting CSV file from 'PowerView's Invoke-EnumerateLocalAdmin -OutFile' parameter"
     break
   }
