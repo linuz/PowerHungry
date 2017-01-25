@@ -225,6 +225,14 @@ Function Invoke-ImportPowerViewAdminsCSV {
     break
   }
 
+  # New check to validate if using old or new PowerView CSV export
+  $Global:OldPowerViewCSVFile = $False
+
+  if ($CSVHeaders -contains'Server') {
+    $Global:OldPowerViewCSVFile = $True
+
+  }
+
   $Global:LocalAdminHashTableName = $CSVFilePath
   Write-Host "Importing CSV File: $Global:LocalAdminHashTableName"
   $LocalAdminCSV = Import-CSV $Global:LocalAdminHashTableName
@@ -325,7 +333,15 @@ Function Search-LocalAdmins {
   )
     
   Write-Verbose "Searching the SID: $objectSID for $IdentitySearched"
-  $SIDResults = $Global:LocalAdminHashTable[$objectSID] | Select-Object -ExpandProperty Server
+
+  # Look for different Property ('Server' instead of 'ComputerName') when using the old PowerView CSV Export File format.
+  if ($Global:OldPowerViewCSVFile -eq $True) {
+    $SIDResults = $Global:LocalAdminHashTable[$objectSID] | Select-Object -ExpandProperty Server
+  }
+
+  else {
+    $SIDResults = $Global:LocalAdminHashTable[$objectSID] | Select-Object -ExpandProperty ComputerName
+  }
     
   if ($SIDResults) {
     $SIDResults | ForEach-Object {
