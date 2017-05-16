@@ -11,9 +11,11 @@ SIDFiltering Trust Status information for reference:
 Usage:
 
 Will grab the trust information for the domain the current user is a member of
+
     PS C:\> Invoke-SidFilteringCheck
                 
 
 Will grab the trust information for all the trusts with ABC.LOCAL Domain/Forest. You can pipe the results to Format-Table (ft) for easier reading
+
     PS C:\> Invoke-SidFilteringCheck ABC.LOCAL | ft
 
