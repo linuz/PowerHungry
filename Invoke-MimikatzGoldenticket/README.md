@@ -1,0 +1,6 @@
+Invoke-MimikatzGoldenticket
+----------------
+
+Usage:
+----------------
+
